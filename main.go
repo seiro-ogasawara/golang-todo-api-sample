@@ -5,15 +5,18 @@ import (
 	"github.com/seiro-ogasawara/golang-todo-api-sample/infra/persistence/onmemory"
 	"github.com/seiro-ogasawara/golang-todo-api-sample/interface/api"
 	"github.com/seiro-ogasawara/golang-todo-api-sample/interface/api/handler"
+	"github.com/seiro-ogasawara/golang-todo-api-sample/interface/api/middleware"
 	"github.com/seiro-ogasawara/golang-todo-api-sample/usecase"
 )
 
 func Route() *gin.Engine {
-	repo := onmemory.NewOnmemoryTodoRepository()
-	usecase := usecase.NewTodoUsecase(repo)
+	todoRepo := onmemory.NewOnmemoryTodoRepository()
+	userRepo := onmemory.NewOnmemoryUserRepository()
+	usecase := usecase.NewTodoUsecase(todoRepo)
 	handler := handler.NewTodoHandler(usecase)
+	authMiddleware := middleware.NewAuthMiddleware(userRepo)
 
-	return api.Route(handler)
+	return api.Route(authMiddleware, handler)
 }
 
 func main() {
