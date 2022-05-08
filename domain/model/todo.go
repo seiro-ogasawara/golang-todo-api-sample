@@ -91,6 +91,7 @@ func ToPriority(v int) Priority {
 
 type Todo struct {
 	ID          int
+	UserID      string
 	Title       string
 	Description string
 	Status      Status

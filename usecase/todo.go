@@ -12,11 +12,11 @@ import (
 )
 
 type TodoUsecase interface {
-	Create(ctx context.Context, title, description string, status, priority int) (*model.Todo, error)
-	Get(ctx context.Context, id string) (*model.Todo, error)
-	List(ctx context.Context, sortByStr, orderByStr string, includeDone bool) ([]*model.Todo, error)
-	Update(ctx context.Context, idStr string, title, description *string, status, priority *int) (*model.Todo, error)
-	Delete(ctx context.Context, idStr string) error
+	Create(ctx context.Context, userID string, title, description string, status, priority int) (*model.Todo, error)
+	Get(ctx context.Context, userID, id string) (*model.Todo, error)
+	List(ctx context.Context, userID, sortByStr, orderByStr string, includeDone bool) ([]*model.Todo, error)
+	Update(ctx context.Context, userID, idStr string, title, description *string, status, priority *int) (*model.Todo, error)
+	Delete(ctx context.Context, userID, idStr string) error
 }
 
 type todoUsecase struct {
@@ -28,7 +28,7 @@ func NewTodoUsecase(repo repository.TodoRepository) TodoUsecase {
 }
 
 func (u *todoUsecase) Create(
-	ctx context.Context, title, description string, statusInt, priorityInt int,
+	ctx context.Context, userID string, title, description string, statusInt, priorityInt int,
 ) (*model.Todo, error) {
 	if err := validateTitle(title); err != nil {
 		return nil, utility.BadRequest("", err)
@@ -49,6 +49,7 @@ func (u *todoUsecase) Create(
 	newTodo := model.Todo{
 		Title:       title,
 		Description: description,
+		UserID:      userID,
 		Status:      status,
 		Priority:    priority,
 	}
@@ -57,19 +58,19 @@ func (u *todoUsecase) Create(
 		return nil, err
 	}
 
-	return u.repo.Get(ctx, newID)
+	return u.repo.Get(ctx, userID, newID)
 }
 
-func (u *todoUsecase) Get(ctx context.Context, idStr string) (*model.Todo, error) {
+func (u *todoUsecase) Get(ctx context.Context, userID, idStr string) (*model.Todo, error) {
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		return nil, utility.BadRequest(fmt.Sprintf("id must be integer, but %s", idStr), err)
 	}
 
-	return u.repo.Get(ctx, id)
+	return u.repo.Get(ctx, userID, id)
 }
 
-func (u *todoUsecase) List(ctx context.Context, sortByStr, orderByStr string, includeDone bool) ([]*model.Todo, error) {
+func (u *todoUsecase) List(ctx context.Context, userID, sortByStr, orderByStr string, includeDone bool) ([]*model.Todo, error) {
 	sortBy, err := model.ToSorter(sortByStr)
 	if err != nil {
 		return nil, utility.BadRequest("", err)
@@ -78,17 +79,17 @@ func (u *todoUsecase) List(ctx context.Context, sortByStr, orderByStr string, in
 	if err != nil {
 		return nil, utility.BadRequest("", err)
 	}
-	return u.repo.List(ctx, sortBy, orderBy, includeDone)
+	return u.repo.List(ctx, userID, sortBy, orderBy, includeDone)
 }
 
 func (u *todoUsecase) Update(
-	ctx context.Context, idStr string, title, description *string, statusIntP, priorityIntP *int,
+	ctx context.Context, userID, idStr string, title, description *string, statusIntP, priorityIntP *int,
 ) (*model.Todo, error) {
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		return nil, utility.BadRequest(fmt.Sprintf("id must be integer, but %s", idStr), err)
 	}
-	todo, err := u.repo.Get(ctx, id)
+	todo, err := u.repo.Get(ctx, userID, id)
 	if err != nil {
 		return nil, err
 	}
@@ -131,13 +132,17 @@ func (u *todoUsecase) Update(
 		return nil, err
 	}
 
-	return u.repo.Get(ctx, id)
+	return u.repo.Get(ctx, userID, id)
 }
 
-func (u *todoUsecase) Delete(ctx context.Context, idStr string) error {
+func (u *todoUsecase) Delete(ctx context.Context, userID, idStr string) error {
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		return utility.BadRequest(fmt.Sprintf("id must be integer, but %s", idStr), err)
+	}
+
+	if _, err = u.repo.Get(ctx, userID, id); err != nil {
+		return err
 	}
 
 	return u.repo.Delete(ctx, id)

@@ -37,22 +37,29 @@ func (r *onmemoryTodoRepository) Create(ctx context.Context, todo model.Todo) (i
 	return todo.ID, nil
 }
 
-func (r *onmemoryTodoRepository) Get(ctx context.Context, id int) (*model.Todo, error) {
+func (r *onmemoryTodoRepository) Get(ctx context.Context, userID string, id int) (*model.Todo, error) {
 	for i := 0; i < len(r.data); i++ {
 		todo := r.data[i]
 		if todo.ID == id {
-			ret := todo
-			return &ret, nil
+			if todo.UserID == userID {
+				ret := todo
+				return &ret, nil
+			}
+			return nil, utility.NotFound("", fmt.Errorf("todo with id %d for user %s is not found", id, userID))
 		}
 	}
-	return nil, utility.NotFound("", fmt.Errorf("todo with id %d is not found", id))
+	return nil, utility.NotFound("", fmt.Errorf("todo with id %d for user %s is not found", id, userID))
 }
 
 func (r *onmemoryTodoRepository) List(
-	ctx context.Context, sortBy model.Sorter, orderBy model.Order, includeDone bool,
+	ctx context.Context, userID string, sortBy model.Sorter, orderBy model.Order, includeDone bool,
 ) ([]*model.Todo, error) {
 	sortedTodos := []model.Todo{}
-	query := linq.From(r.data)
+	query := linq.From(r.data).WhereT(
+		func(t model.Todo) bool {
+			return t.UserID == userID
+		},
+	)
 	if !includeDone {
 		// exclude finished todo
 		query = query.WhereT(

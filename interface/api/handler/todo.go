@@ -9,18 +9,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/seiro-ogasawara/golang-todo-api-sample/domain/model"
+	servermodel "github.com/seiro-ogasawara/golang-todo-api-sample/interface/api/model"
 	"github.com/seiro-ogasawara/golang-todo-api-sample/usecase"
 	"github.com/seiro-ogasawara/golang-todo-api-sample/utility"
 )
-
-type MessageResponse struct {
-	Message string `json:"message"`
-}
-
-type ErrorResponse struct {
-	ErrCode int    `json:"errCode"`
-	Detail  string `json:"detail"`
-}
 
 // TodoHandler is API interface of Todo service.
 type TodoHandler interface {
@@ -73,6 +65,8 @@ func buildTodoResponse(todo *model.Todo) TodoResponse {
 
 // Create processes the request of `POST /todos`.
 func (h *todoHandler) Create(c *gin.Context) {
+	userID := c.GetString(utility.UserIDKey)
+
 	json := CreateTodoRequest{
 		Status:   int(model.StatusNotReady),
 		Priority: int(model.PriorityMiddle),
@@ -80,12 +74,12 @@ func (h *todoHandler) Create(c *gin.Context) {
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.AbortWithStatusJSON(
 			http.StatusBadRequest,
-			ErrorResponse{ErrCode: http.StatusBadRequest, Detail: err.Error()},
+			servermodel.ErrorResponse{ErrCode: http.StatusBadRequest, Detail: err.Error()},
 		)
 		return
 	}
 
-	newTodo, err := h.u.Create(c, json.Title, json.Description, json.Status, json.Priority)
+	newTodo, err := h.u.Create(c, userID, json.Title, json.Description, json.Status, json.Priority)
 	if err != nil {
 		sendErrorResponse(c, err)
 		return
@@ -95,8 +89,10 @@ func (h *todoHandler) Create(c *gin.Context) {
 
 // Get processes the request of `GET /todos/:id`.
 func (h *todoHandler) Get(c *gin.Context) {
+	userID := c.GetString(utility.UserIDKey)
 	todoID := c.Param("id")
-	todo, err := h.u.Get(c, todoID)
+
+	todo, err := h.u.Get(c, userID, todoID)
 	if err != nil {
 		sendErrorResponse(c, err)
 		return
@@ -118,6 +114,8 @@ type ListTodoResponse struct {
 
 // List processes the request of `GET /todos`.
 func (h todoHandler) List(c *gin.Context) {
+	userID := c.GetString(utility.UserIDKey)
+
 	query := ListTodoRequest{
 		SortBy:      string(model.SortByID),
 		OrderBy:     string(model.OrderByASC),
@@ -126,12 +124,12 @@ func (h todoHandler) List(c *gin.Context) {
 	if err := c.ShouldBindQuery(&query); err != nil {
 		c.AbortWithStatusJSON(
 			http.StatusBadRequest,
-			ErrorResponse{ErrCode: http.StatusBadRequest, Detail: err.Error()},
+			servermodel.ErrorResponse{ErrCode: http.StatusBadRequest, Detail: err.Error()},
 		)
 		return
 	}
 
-	todos, err := h.u.List(c, query.SortBy, query.OrderBy, query.IncludeDone)
+	todos, err := h.u.List(c, userID, query.SortBy, query.OrderBy, query.IncludeDone)
 	if err != nil {
 		sendErrorResponse(c, err)
 		return
@@ -154,16 +152,18 @@ type UpdateTodoRequest struct {
 
 // Update processes the request of `PATCH /todos/:id`.
 func (h todoHandler) Update(c *gin.Context) {
+	userID := c.GetString(utility.UserIDKey)
 	todoID := c.Param("id")
+
 	json := UpdateTodoRequest{}
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.AbortWithStatusJSON(
 			http.StatusBadRequest,
-			ErrorResponse{ErrCode: http.StatusBadRequest, Detail: err.Error()},
+			servermodel.ErrorResponse{ErrCode: http.StatusBadRequest, Detail: err.Error()},
 		)
 		return
 	}
-	todo, err := h.u.Update(c, todoID, json.Title, json.Description, json.Status, json.Priority)
+	todo, err := h.u.Update(c, userID, todoID, json.Title, json.Description, json.Status, json.Priority)
 	if err != nil {
 		sendErrorResponse(c, err)
 		return
@@ -173,22 +173,27 @@ func (h todoHandler) Update(c *gin.Context) {
 
 // Delete processes the request of `DELETE /todos/:id`.
 func (h todoHandler) Delete(c *gin.Context) {
+	userID := c.GetString(utility.UserIDKey)
 	todoID := c.Param("id")
-	if err := h.u.Delete(c, todoID); err != nil {
+
+	if err := h.u.Delete(c, userID, todoID); err != nil {
 		sendErrorResponse(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, MessageResponse{Message: fmt.Sprintf("todo %s is deleted", todoID)})
+	c.JSON(http.StatusOK, servermodel.MessageResponse{Message: fmt.Sprintf("todo %s is deleted", todoID)})
 }
 
 func sendErrorResponse(c *gin.Context, err error) {
 	var httpErr *utility.HTTPError
 	if errors.As(err, &httpErr) {
-		c.AbortWithStatusJSON(httpErr.ErrCode(), ErrorResponse{ErrCode: httpErr.ErrCode(), Detail: httpErr.Error()})
+		c.AbortWithStatusJSON(
+			httpErr.ErrCode(),
+			servermodel.ErrorResponse{ErrCode: httpErr.ErrCode(), Detail: httpErr.Error()},
+		)
 		return
 	}
 	c.AbortWithStatusJSON(
 		http.StatusInternalServerError,
-		ErrorResponse{ErrCode: http.StatusInternalServerError, Detail: err.Error()},
+		servermodel.ErrorResponse{ErrCode: http.StatusInternalServerError, Detail: err.Error()},
 	)
 }
