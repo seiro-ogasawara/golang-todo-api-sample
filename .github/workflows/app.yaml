@@ -2,7 +2,7 @@ name: CI workflow
 
 on:
   pull_request:
-    types: [opened, synchoronize, closed]
+    types: [opened, synchronize, closed]
 
 jobs:
   ci:
