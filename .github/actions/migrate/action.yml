@@ -37,7 +37,6 @@ runs:
       run: |
         curl -L https://github.com/golang-migrate/migrate/releases/download/${{ inputs.version }}/migrate.linux-amd64.tar.gz -o /tmp/migrate.tar.gz
         sudo tar -C /usr/local/bin -xf /tmp/migrate.tar.gz
-        sudo mv /usr/local/bin/migrate.linux-amd64 /usr/local/bin/migrate
       shell: bash
 
     - name: migrate via golang-migrate
