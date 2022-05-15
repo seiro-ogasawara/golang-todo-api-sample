@@ -382,7 +382,7 @@ func testTodoList(t *testing.T, router *gin.Engine, db *gorm.DB, userRepo reposi
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			url := fmt.Sprintf("/todos?")
+			url := "/todos?"
 			if c.param.SortBy != "" {
 				url = fmt.Sprintf("%ssortby=%s&", url, c.param.SortBy)
 			}
@@ -694,7 +694,7 @@ func createRouterWithOnmemoryRepository(t *testing.T) (*gin.Engine, *gorm.DB, re
 func getContext(t *testing.T, db *gorm.DB) context.Context {
 	t.Helper()
 
-	return context.WithValue(context.TODO(), config.DBKey, db)
+	return context.WithValue(context.TODO(), config.DBKey, db) //nolint:staticcheck
 }
 
 func createTodo(
