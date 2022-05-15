@@ -1,0 +1,45 @@
+name: DB migration
+description: migrate postgresql database with golang-migrate
+
+inputs:
+  migration-dir:
+    description: "the directory where the migration files are located"
+    required: true
+  db-host:
+    description: "host of database(default: localhost)"
+    required: false
+    default: localhost
+  db-user:
+    description: "user of connect database(default: postgres)"
+    required: false
+    default: postgres
+  db-pass:
+    description: "password of user(default: postgres)"
+    required: false
+    default: postgres
+  db-port:
+    description: "port number of database(default: 5432)"
+    required: false
+    default: "5432"
+  db-name:
+    description: "name of database(default: postgres)"
+    required: false
+    default: postgres
+  version:
+    description: "version of golang-migrate(default: v4.15.2)"
+    required: false
+    default: v4.15.2
+
+runs:
+  using: "composite"
+  steps:
+    - name: install migration tool
+      run: |
+        curl -L https://github.com/golang-migrate/migrate/releases/download/${{ inputs.version }}/migrate.linux-amd64.tar.gz -o /tmp/migrate.tar.gz
+        sudo tar -C /usr/local/bin -xf /tmp/migrate.tar.gz
+        sudo mv /usr/local/bin/migrate.linux-amd64 /usr/local/bin/migrate
+      shell: bash
+
+    - name: migrate via golang-migrate
+      run: migrate -database postgres://${{ inputs.db-user }}:${{ inputs.db-pass }}@${{ inputs.db-host }}:${{ inputs.db-port }}/${{ inputs.db-name }}?sslmode=disable -path ${{ inputs.migration-dir }} up
+      shell: bash

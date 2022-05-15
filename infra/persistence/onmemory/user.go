@@ -20,7 +20,7 @@ func NewOnmemoryUserRepository() repository.UserRepository {
 
 func (r *onmemoryUserRepository) Authenticate(ctx context.Context, id, password string) (bool, error) {
 	for _, u := range r.data {
-		if id == u.ID {
+		if id == u.UserID {
 			if password == u.Password {
 				return true, nil
 			}
@@ -34,7 +34,7 @@ func (r *onmemoryUserRepository) Create(ctx context.Context, id, password string
 	r.sync.Lock()
 	defer r.sync.Unlock()
 
-	user := model.User{ID: id, Password: password}
+	user := model.User{UserID: id, Password: password}
 	r.data = append(r.data, user)
 
 	return nil
