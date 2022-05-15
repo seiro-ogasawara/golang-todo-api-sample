@@ -6,17 +6,43 @@ import (
 	"github.com/seiro-ogasawara/golang-todo-api-sample/interface/api/middleware"
 )
 
-func Route(auth middleware.AuthMiddleware, handler handler.TodoHandler) *gin.Engine {
+func Route(
+	auth middleware.AuthMiddleware,
+	//dbMiddleware middleware.DBMiddleware,
+	dbMiddleware *middleware.DBMiddleware,
+	handler handler.TodoHandler,
+) *gin.Engine {
+
 	r := gin.Default()
 
 	todoAPIGroup := r.Group("/todos")
 	todoAPIGroup.Use(auth.NewAuthentication())
 
-	todoAPIGroup.POST("", handler.Create)
-	todoAPIGroup.GET("", handler.List)
-	todoAPIGroup.GET("/:id", handler.Get)
-	todoAPIGroup.PATCH("/:id", handler.Update)
-	todoAPIGroup.DELETE("/:id", handler.Delete)
+	todoAPIGroup.POST(
+		"",
+		dbMiddleware.NewTransaction(),
+		handler.Create,
+	)
+	todoAPIGroup.GET(
+		"",
+		dbMiddleware.NewDB(),
+		handler.List,
+	)
+	todoAPIGroup.GET(
+		"/:id",
+		dbMiddleware.NewDB(),
+		handler.Get,
+	)
+	todoAPIGroup.PATCH(
+		"/:id",
+		dbMiddleware.NewTransaction(),
+		handler.Update,
+	)
+	todoAPIGroup.DELETE(
+		"/:id",
+		dbMiddleware.NewTransaction(),
+		handler.Delete,
+	)
 
 	return r
 }

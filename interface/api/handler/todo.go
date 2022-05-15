@@ -12,6 +12,7 @@ import (
 	servermodel "github.com/seiro-ogasawara/golang-todo-api-sample/interface/api/model"
 	"github.com/seiro-ogasawara/golang-todo-api-sample/usecase"
 	"github.com/seiro-ogasawara/golang-todo-api-sample/utility"
+	"github.com/seiro-ogasawara/golang-todo-api-sample/utility/config"
 )
 
 // TodoHandler is API interface of Todo service.
@@ -65,7 +66,7 @@ func buildTodoResponse(todo *model.Todo) TodoResponse {
 
 // Create processes the request of `POST /todos`.
 func (h *todoHandler) Create(c *gin.Context) {
-	userID := c.GetString(utility.UserIDKey)
+	userID := c.GetString(config.UserIDKey)
 
 	json := CreateTodoRequest{
 		Status:   int(model.StatusNotReady),
@@ -89,7 +90,7 @@ func (h *todoHandler) Create(c *gin.Context) {
 
 // Get processes the request of `GET /todos/:id`.
 func (h *todoHandler) Get(c *gin.Context) {
-	userID := c.GetString(utility.UserIDKey)
+	userID := c.GetString(config.UserIDKey)
 	todoID := c.Param("id")
 
 	todo, err := h.u.Get(c, userID, todoID)
@@ -114,7 +115,7 @@ type ListTodoResponse struct {
 
 // List processes the request of `GET /todos`.
 func (h todoHandler) List(c *gin.Context) {
-	userID := c.GetString(utility.UserIDKey)
+	userID := c.GetString(config.UserIDKey)
 
 	query := ListTodoRequest{
 		SortBy:      string(model.SortByID),
@@ -152,7 +153,7 @@ type UpdateTodoRequest struct {
 
 // Update processes the request of `PATCH /todos/:id`.
 func (h todoHandler) Update(c *gin.Context) {
-	userID := c.GetString(utility.UserIDKey)
+	userID := c.GetString(config.UserIDKey)
 	todoID := c.Param("id")
 
 	json := UpdateTodoRequest{}
@@ -173,7 +174,7 @@ func (h todoHandler) Update(c *gin.Context) {
 
 // Delete processes the request of `DELETE /todos/:id`.
 func (h todoHandler) Delete(c *gin.Context) {
-	userID := c.GetString(utility.UserIDKey)
+	userID := c.GetString(config.UserIDKey)
 	todoID := c.Param("id")
 
 	if err := h.u.Delete(c, userID, todoID); err != nil {

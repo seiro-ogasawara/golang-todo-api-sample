@@ -20,14 +20,29 @@ import (
 	"github.com/seiro-ogasawara/golang-todo-api-sample/interface/api/handler"
 	"github.com/seiro-ogasawara/golang-todo-api-sample/interface/api/middleware"
 	"github.com/seiro-ogasawara/golang-todo-api-sample/usecase"
+	"github.com/seiro-ogasawara/golang-todo-api-sample/utility/config"
+	"github.com/seiro-ogasawara/golang-todo-api-sample/utility/db"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
-func TestTodoCreate(t *testing.T) {
-	now := time.Now()
-	router, userRepo := createRouterWithOnmemoryRepository(t)
+func TestTodoCreateWithOnmemoryRepository(t *testing.T) {
+	router, db, userRepo := createRouterWithOnmemoryRepository(t)
+	testTodoCreate(t, router, db, userRepo)
+}
 
-	_ = userRepo.Create(context.TODO(), "userid", "password")
+func TestTodoCreateWithDatabaseRepository(t *testing.T) {
+	router, db, userRepo := createRouterWithDatabaseRepository(t)
+	testTodoCreate(t, router, db, userRepo)
+}
+
+func testTodoCreate(t *testing.T, router *gin.Engine, db *gorm.DB, userRepo repository.UserRepository) {
+	t.Helper()
+
+	now := time.Now()
+	ctx := getContext(t, db)
+
+	_ = userRepo.Create(ctx, "userid", "password")
 
 	cases := []struct {
 		name           string
@@ -159,10 +174,21 @@ func TestTodoCreate(t *testing.T) {
 	}
 }
 
-func TestTodoGet(t *testing.T) {
-	router, userRepo := createRouterWithOnmemoryRepository(t)
-	_ = userRepo.Create(context.TODO(), "userid", "password")
-	_ = userRepo.Create(context.TODO(), "userid2", "password2")
+func TestTodoGetWithOnmemoryRepository(t *testing.T) {
+	router, db, userRepo := createRouterWithOnmemoryRepository(t)
+	testTodoGet(t, router, db, userRepo)
+}
+
+func TestTodoGetWithDatabaseRepository(t *testing.T) {
+	router, db, userRepo := createRouterWithDatabaseRepository(t)
+	testTodoGet(t, router, db, userRepo)
+}
+
+func testTodoGet(t *testing.T, router *gin.Engine, db *gorm.DB, userRepo repository.UserRepository) {
+	t.Helper()
+
+	_ = userRepo.Create(getContext(t, db), "userid", "password")
+	_ = userRepo.Create(getContext(t, db), "userid2", "password2")
 
 	// prepare todo
 	var existingTodo handler.TodoResponse
@@ -240,10 +266,21 @@ func TestTodoGet(t *testing.T) {
 	}
 }
 
-func TestTodoList(t *testing.T) {
-	router, userRepo := createRouterWithOnmemoryRepository(t)
-	_ = userRepo.Create(context.TODO(), "userid", "password")
-	_ = userRepo.Create(context.TODO(), "userid2", "password2")
+func TestTodoListWithOnmemoryRepository(t *testing.T) {
+	router, db, userRepo := createRouterWithOnmemoryRepository(t)
+	testTodoList(t, router, db, userRepo)
+}
+
+func TestTodoListWithDatabaseRepository(t *testing.T) {
+	router, db, userRepo := createRouterWithDatabaseRepository(t)
+	testTodoList(t, router, db, userRepo)
+}
+
+func testTodoList(t *testing.T, router *gin.Engine, db *gorm.DB, userRepo repository.UserRepository) {
+	t.Helper()
+
+	_ = userRepo.Create(getContext(t, db), "userid", "password")
+	_ = userRepo.Create(getContext(t, db), "userid2", "password2")
 
 	// prepare todo
 	userTodos := make([]handler.TodoResponse, 0)
@@ -345,7 +382,7 @@ func TestTodoList(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			url := fmt.Sprintf("/todos?")
+			url := "/todos?"
 			if c.param.SortBy != "" {
 				url = fmt.Sprintf("%ssortby=%s&", url, c.param.SortBy)
 			}
@@ -379,10 +416,21 @@ func TestTodoList(t *testing.T) {
 	}
 }
 
-func TestTodoUpdate(t *testing.T) {
-	router, userRepo := createRouterWithOnmemoryRepository(t)
-	_ = userRepo.Create(context.TODO(), "userid", "password")
-	_ = userRepo.Create(context.TODO(), "userid2", "password2")
+func TestTodoUpdateWithOnmemoryRepository(t *testing.T) {
+	router, db, userRepo := createRouterWithOnmemoryRepository(t)
+	testTodoUpdate(t, router, db, userRepo)
+}
+
+func TestTodoUpdateWithDatabaseRepository(t *testing.T) {
+	router, db, userRepo := createRouterWithDatabaseRepository(t)
+	testTodoUpdate(t, router, db, userRepo)
+}
+
+func testTodoUpdate(t *testing.T, router *gin.Engine, db *gorm.DB, userRepo repository.UserRepository) {
+	t.Helper()
+
+	_ = userRepo.Create(getContext(t, db), "userid", "password")
+	_ = userRepo.Create(getContext(t, db), "userid2", "password2")
 
 	// prepare todo
 	var existingTodo handler.TodoResponse
@@ -538,10 +586,21 @@ func TestTodoUpdate(t *testing.T) {
 	}
 }
 
-func TestTodoDelete(t *testing.T) {
-	router, userRepo := createRouterWithOnmemoryRepository(t)
-	_ = userRepo.Create(context.TODO(), "userid", "password")
-	_ = userRepo.Create(context.TODO(), "userid2", "password2")
+func TestTodoDeleteWithOnmemoryRepository(t *testing.T) {
+	router, db, userRepo := createRouterWithOnmemoryRepository(t)
+	testTodoDelete(t, router, db, userRepo)
+}
+
+func TestTodoDeleteWithDatabaseRepository(t *testing.T) {
+	router, db, userRepo := createRouterWithDatabaseRepository(t)
+	testTodoDelete(t, router, db, userRepo)
+}
+
+func testTodoDelete(t *testing.T, router *gin.Engine, db *gorm.DB, userRepo repository.UserRepository) {
+	t.Helper()
+
+	_ = userRepo.Create(getContext(t, db), "userid", "password")
+	_ = userRepo.Create(getContext(t, db), "userid2", "password2")
 
 	// prepare todo
 	var existingTodo handler.TodoResponse
@@ -612,13 +671,30 @@ func TestTodoDelete(t *testing.T) {
 	}
 }
 
-func createRouterWithOnmemoryRepository(t *testing.T) (*gin.Engine, repository.UserRepository) {
+func createRouterWithDatabaseRepository(t *testing.T) (*gin.Engine, *gorm.DB, repository.UserRepository) {
+	db := db.GetTestDBConn(t)
 	todoRepo := onmemory.NewOnmemoryTodoRepository()
 	userRepo := onmemory.NewOnmemoryUserRepository()
 	usecase := usecase.NewTodoUsecase(todoRepo)
 	handler := handler.NewTodoHandler(usecase)
 	authMiddleware := middleware.NewAuthMiddleware(userRepo)
-	return api.Route(authMiddleware, handler), userRepo
+	dbMiddleware := middleware.NewDBMiddleware(db)
+	return api.Route(authMiddleware, dbMiddleware, handler), db, userRepo
+}
+
+func createRouterWithOnmemoryRepository(t *testing.T) (*gin.Engine, *gorm.DB, repository.UserRepository) {
+	todoRepo := onmemory.NewOnmemoryTodoRepository()
+	userRepo := onmemory.NewOnmemoryUserRepository()
+	usecase := usecase.NewTodoUsecase(todoRepo)
+	handler := handler.NewTodoHandler(usecase)
+	authMiddleware := middleware.NewAuthMiddleware(userRepo)
+	return api.Route(authMiddleware, nil, handler), nil, userRepo
+}
+
+func getContext(t *testing.T, db *gorm.DB) context.Context {
+	t.Helper()
+
+	return context.WithValue(context.TODO(), config.DBKey, db) //nolint:staticcheck
 }
 
 func createTodo(

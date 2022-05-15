@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/seiro-ogasawara/golang-todo-api-sample/domain/repository"
 	"github.com/seiro-ogasawara/golang-todo-api-sample/interface/api/model"
-	"github.com/seiro-ogasawara/golang-todo-api-sample/utility"
+	"github.com/seiro-ogasawara/golang-todo-api-sample/utility/config"
 )
 
 type AuthMiddleware interface {
@@ -50,6 +50,6 @@ func (m *authMiddleware) NewAuthentication() gin.HandlerFunc {
 			return
 		}
 
-		c.Set(utility.UserIDKey, pair[0])
+		c.Set(config.UserIDKey, pair[0])
 	}
 }

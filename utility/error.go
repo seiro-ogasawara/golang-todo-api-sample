@@ -34,3 +34,11 @@ func BadRequest(message string, cause error) *HTTPError {
 func NotFound(message string, cause error) *HTTPError {
 	return NewHTTPError(http.StatusNotFound, message, cause)
 }
+
+func Conflict(message string, cause error) *HTTPError {
+	return NewHTTPError(http.StatusConflict, message, cause)
+}
+
+func InternalServerError(message string, cause error) *HTTPError {
+	return NewHTTPError(http.StatusInternalServerError, message, cause)
+}

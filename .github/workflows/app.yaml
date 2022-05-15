@@ -2,11 +2,26 @@ name: CI workflow
 
 on:
   pull_request:
-    types: [opened, synchoronize, closed]
+    types: [opened, synchronize, closed]
 
 jobs:
   ci:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test
+        ports:
+          - 15432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -25,6 +40,13 @@ jobs:
           skip-cache: true
           skip-pkg-cache: true
           skip-build-cache: true
+
+      - name: Migrate DB
+        uses: ./.github/actions/migrate
+        with:
+          migration-dir: migration
+          db-port: 15432
+          db-name: test
 
       - name: Unit test
         run: make test

@@ -90,14 +90,19 @@ func ToPriority(v int) Priority {
 }
 
 type Todo struct {
-	ID          int
-	UserID      string
-	Title       string
+	ID          int    `gorm:"primaryKey"`
+	UserID      string `gorm:"not null"`
+	Title       string `gorm:"not null"`
 	Description string
-	Status      Status
-	Priority    Priority
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	Status      Status    `gorm:"not null"`
+	Priority    Priority  `gorm:"not null"`
+	CreatedAt   time.Time `gorm:"not null"`
+	UpdatedAt   time.Time `gorm:"not null"`
+	User        *User
+}
+
+func (Todo) TableName() string {
+	return "todos"
 }
 
 type Sorter string
